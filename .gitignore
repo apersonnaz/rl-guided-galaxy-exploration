@@ -3,3 +3,4 @@ app/__pycache__
 rl/__pycache__
 wandb
 saved_models
+app/data/sdss/galaxies.csv

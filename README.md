@@ -1,5 +1,7 @@
 # rl-guided-galaxy-exploration
 
+Requires python 3.7+
+
 Install required dependencies:
 
     python3 -m pip install -r requirements.txt
