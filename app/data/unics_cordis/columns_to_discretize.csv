@@ -1,0 +1,8 @@
+table,column
+projects,total_cost
+projects,ec_max_contribution
+projects_x10,total_cost
+projects_x10,ec_max_contribution
+projects_x100,total_cost
+projects_x100,ec_max_contribution
+project_members,ec_contribution

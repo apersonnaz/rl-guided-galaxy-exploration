@@ -1,0 +1,222 @@
+code,title
+"",[none]
+TN,Thematic Network
+PB,Pilot Type B
+PA,Pilot Type A
+BPN,Best Practice Network
+PPI,Public Procurement of Innovative solutions
+MSCA-RISE,Marie Skłodowska-Curie Research and Innovation Staff Exchange (RISE)
+H2020-EEN-SGA,Specific Grant Agreement Enterprise Europe Network (EEN)
+FCH2-IA,Innovation action
+FCH2-CSA,Coordination & support action
+CSA-LS,CSA Lump sum
+SGA-RIA,SGA-RIA
+CS2-IA,Innovation action
+CS2-RIA,Research and Innovation action
+COFUND-PCP,COFUND (PCP)
+SESAR-RIA,Research and Innovation action
+COFUND-PPI,COFUND (PPI)
+IA-LS,Innovation action Lump Sum
+BBI-CSA,Bio-based Industries Coordination and Support action
+ECSEL-CSA,ECSEL Coordination & Support action
+NOE,[none]
+Shift2Rail-RIA,Research and Innovation action
+Shift2Rail-IA,Innovation action
+SESAR-IA,Innovation action
+PCP,Pre-Commercial Procurement
+SESAR-CSA,Coordination and Support Action
+Shift2Rail-CSA,Coordination and Support Action
+IMI2-RIA,Research and Innovation action
+MSCA-IF-EF-SE,Society and Enterprise panel
+Shift2Rail-IA-LS,Innovation Action Lump-Sum
+Shift2Rail-RIA-LS,Shift2Rail Research and Innovation Action Lump-Sum
+MSCA-ITN-ETN,European Training Networks
+MSCA-IF-EF-RI,RI – Reintegration panel
+IMI2-CSA,Coordination & support action
+RIA-LS,Research and Innovation action Lump Sum
+MC-IA,Industry-Academia Partnerships and Pathways (IAPP)
+CP-CSA-Infra-PP,Construction of New Research Infrastructures - Preparatory Phase
+CAREER,Support for training and career development of researchers
+CIP-ICT-PSP-TN,CIP-Thematic Network - ICT
+MC-ITN,Networks for Initial Training (ITN)
+CP-TP,Collaborative Project targeted to a special group (such as SMEs)
+BSG-CSO,Research for Civil Society Organisations (CSOs)
+RFCS,Research Fund for Coal and Steel
+MC-IEF,Intra-European Fellowships (IEF)
+CIP-ICT-PSP-TN(EC),CIP-Thematic Network Eligible Cost - ICT
+MC-IO,International Outgoing Fellowships (IOF)
+AM-SSA,Accompanying measures implemented as Specific Support Actions
+DS,Research Infrastructure-Design studies
+MSCA-COFUND-DP,Doctoral programmes
+CP-IP-TP,Collaborative Project (large-scale integrating project targeted to SME)
+ERA-NET-Cofund,ERA-NET Cofund
+MC-IE,Intra-European Fellowships (IEF)
+MSCA-IF-GF,Global Fellowships
+Cooperative,SMEs-Co-operative research contracts
+CP-CS,Integrating Activities / e-Infrastructures / Preparatory phase
+169,Joint implementation of well identified national research programmes
+CP-CSA-INFRA,Integrating activities / e-infrastructures / preparatory phase
+JRC,Joint Research Centre research
+LFC,Access to Research Infrastructures
+CP-CSA-PCP,Pre Commercial Procurement
+JTI-CP-FCH,Joint Technology Initiatives -  Collaborative Project (FCH)
+Collective,SMEs-Collective research projects
+ACT,Association contracts
+CP-SoU,CP-Scale of Unit
+MC-IRG,International Re-integration Grants (IRG)
+MSCA-COFUND-FP,Fellowship programmes
+ERC-COG,Consolidator Grant
+ACM,"Preparatory, accompanying and support measures"
+CP-SI,Collaborative project for specific cooperation actions dedicated to international cooperation partner countries (SICA)
+JTI-CP-IMI,Joint Technology Initiatives - Collaborative Project (IMI)
+IPC,Industrial pilot contracts
+SCF,Marie Curie actions-Series of events
+MC-IR,International Re-integration Grants (IRG)
+TALI,Euratom Transnational Access
+BUR,"Bursaries, grants, fellowships"
+ERC-ER1,Experienced researchers 1st stage
+CRAFT,Co-operative research projects
+THN,Thematic network contracts
+MSCA-IF-EF-ST,Standard EF
+CSA-SA,Support actions
+CSA-CA-INFSO-FET,Coordination (or networking) actions INFSO - FET
+STU,"Study contracts, assessment contracts"
+COFUND-EJP,COFUND (European Joint Programme)
+ERC-ER2,Experienced researchers 2nd stage
+MC-AWARDS,Awards (AWARDS)
+GIC,Grants for industrialized countries
+DS-SSA,Design studies implemented as Specific Support Actions
+CP-FP-SICA,Small/medium-scale focused research project for specific cooperation actions dedicated to international cooperation partner countries(SICA)
+IIF,Marie Curie actions-Incoming International Fellowships
+CSA-CA,Coordination (or networking) actions
+OIF,Marie Curie actions-Outgoing International Fellowships
+SSA Specific Support,""
+CA,Coordination action
+CSA-ERANET,ERANET
+SER,Service contracts
+JTI-CS,Joint Technology Initiatives - Clean Sky
+JTI-CSA-FCH,Joint Technology Initiatives - Coordination and Support Acti
+TA,Research Infrastructure-Transnational access
+BSG-SME,Research for SMEs
+SC,High Level Scientific Conference
+MC-IOF,International Outgoing Fellowships (IOF)
+ERC-YR,Young researchers
+EIF,Marie Curie actions-Intra-European Fellowships
+SME-1,SME instrument phase 1
+CP-IP-SICA,Large-scale integrating project for specific cooperation actions dedicated to international cooperation partner countries(SICA)
+EXT,Marie Curie actions-Grants for Excellent Teams
+CP-FP-INFSO-FET,Small or medium-scale focused research project INFSO - FET
+SME-2,SME instrument phase 2
+ERC-SyG,Synergy grant
+CP,Collaborative project (generic)
+MSCA-ITN-EID,European Industrial Doctorates
+CIP-EIP-EI-TNS,CIP-EIP - EI (Europe INNOVA) - Thematic Network Support
+ERC-LVG,ERC low value grant
+BSG-SME-AG,Research for SME associations/groupings
+IA-CA,Integrating activities implemented as Coordination Actions
+STIP,Specific Targeted Innovation Project
+RGI,Research grants (individual fellowships)
+MSCA-ITN-EJD,European Joint Doctorates
+EXC,Marie Curie actions-Chairs
+MC-IAPP,Industry-Academia Partnerships and Pathways (IAPP)
+CIP-EIP-EI-TN,CIP-EIP - EI (Europe INNOVA) - Thematic Network
+ERC-STG,Starting Grant
+JTI-CP-ARTEMIS,Joint Technology Initiatives - Collaborative Project (ARTEMIS)
+CON,Coordination of research actions
+CP-CSA-Infra,Combination of CP and CSA
+CSA-SA(POC),Supporting action (Proof of Concept)
+CP-CSA,Combined Collaborative Project and Coordination and Support Action
+EXA,Marie Curie actions-Excellence Awards
+CPCSA,Combined Collaborative Project and Coordination and Support Action
+STREP,Specific Targeted Research Project
+CP-IP,Large-scale integrating project
+CLR,Collective research projects
+CP-CSA-Infra-IP,Construction of New Research Infrastructures - Implementation Phase
+RIA,Research and Innovation action
+CSA-ERA-PLUS,ERANETPLUS
+RIN,Marie Curie actions-Research Training Networks
+CIP-ICT-PSP-BPN,CIP-Best Practice Network
+CP-SICA,Collaborative project for specific cooperation actions dedicated to international cooperation partner countries (SICA)
+CIP-IEE-PROMO-BWI,CIP-Promotion Building WorkForce Projects
+TFGCTC,Grants for co-operation with third countries
+SSA,Specific Support Action
+CNC,Cooperation network contracts
+CND,Communication network development
+CNI,Research Infrastructure-Construction of new infrastructures 
+CP-SICA-INFSO,Collab. Proj. Specific International Cooperation Actions (SICA)
+TOK-IAP,Transfer of Knowledge-Industry
+JTI-171,Joint Technology Initiatives
+CRS,Cooperative research contracts
+CSA-ERA-Plus,ERA-NET Plus
+DEF,Definition Phase Project
+CIP-ICT-PSP-PA,CIP-Pilot Type A
+MSCA-IF-EF-CAR,CAR – Career Restart panel
+SGA-CSA,Specific Grant agreement and Coordination and Support Action
+BBI-IA-FLAG,Bio-based Industries Innovation action - Flagship
+ECSEL-RIA,ECSEL Research and Innovation Action
+CP-FP-TP,Collaborative Project (small or medium-scale focused research project targeted to SME)
+I3,Research Infrastructure-Integrated Infrastructure Initiative
+RSSF,Risk sharing finance facility
+CIP-ICT-PSP-PB,CIP-Pilot Type B
+CIP-IEE-MRP,CIP-Market replication projects
+DEM,Demonstration contracts
+EAT,Exploratory awards (thematic networks)
+FPA,Framework Partnership Agreement
+DEP,Science and Society-Descartes prize
+EAW,Exploratory awards
+ERC-CG,ERC Consolidator Grants
+CSC,Cost-sharing contracts
+CP-IP-INFSO-FET,Large-scale integrating project INFSO - FET
+CIP-IEE-Promo-P,CIP-Promotion Projects
+IA,Innovation action
+EAD,Exploratory awards (demonstration)
+MC-CIG,Support for training and career development of researcher (CIG)
+ERC-SG,ERC Starting Grant
+IP,Integrated Project
+CSA-S,Support actions
+CIP-IEE-Promo-A,CIP-Agencies
+LCF,Marie Curie actions-Large conferences
+MC-ERG,European Re-integration Grants (ERG)
+JTI-CP-ENIAC,Joint Technology Initiatives - Collaborative Project (ENIAC)
+MC-IIFR,International incoming fellowships (Return phase)
+MC-IIF,International Incoming Fellowships (IIF)
+CSA-E,ERANETplus
+CNI-SSA,Construction of new infrastructures implemented as Specific Support Actions
+CSA-C,Coordination (or networking) actions
+EST,Marie Curie actions-Early-stage Training
+ERC-POC,Proof of Concept Grant
+CIP-EIP-TN-PIE,CIP-Eco-Innovation - Thematic Networks-PIE (Pro Inno Europe)
+FUSION,Administrative Contracts (FUSION)
+CP-FP-INFSO,Small or medium-scale focused research project INFSO (STREP)
+PoC,Proof of Concept
+MC-COFUND,"Co-funding of Regional, National and International Programmes (COFUND)"
+RTN,Marie Curie actions-Research Training Networks
+TOK-DEV,Transfer of Knowledge-Development
+ERC-AG,ERC Advanced Grant
+IRG,Marie Curie actions-International re-integration grants
+ART169,Article 169
+notAvailable,No contract type
+NoE,Network of Excellence
+CIP-EIP-TN-EI,CIP-Eco-Innovation - Thematic Networks-EI (Europe Innova)
+OPC,Operations contracts
+CSA-SA-INFSO-FET,Support actions INFSO - FET
+Infrastr-171,Construction of new infrastructures 
+IIFR,Incoming International Fellowships (Return Phase)
+ERG,Marie Curie actions-European Re-integration Grants
+CP-FP-TP-SICA,Collaborative Project for Specific Cooperation Actions dedicated to International Actions
+NET,Research network contracts
+CP-FP,Small or medium-scale focused research project
+MC-IRSES,International research staff exchange scheme (IRSES)
+IA-I3,Integrating activities implemented as Integrated Infrastructure Initiatives
+CIP-EIP-EI-PMRP,CIP-Eco-Innovation - Pilot and market replication projects
+CIP-EIP-SPA,CIP-Agencies Projects
+TA-SSA,Transnational access implemented as Specific Support Actions
+TOK,Marie Curie actions-Transfer of Knowledge
+CSA,Coordination and support action
+ERC-ADG,Advanced Grant
+BBI-RIA,Bio-based Industries Research and Innovation action
+BBI-IA-DEMO,Bio-based Industries Innovation action - Demonstration
+ECSEL-IA,ECSEL Innovation Action
+FCH2-RIA,Research and Innovation action
+CS2-CSA,Coordination & support action
+ERC-POC-LS,ERC Proof of Concept Lump Sum Pilot

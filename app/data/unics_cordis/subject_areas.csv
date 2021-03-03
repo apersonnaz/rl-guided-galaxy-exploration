@@ -1,0 +1,72 @@
+code,title,description
+FIS,Nuclear Fission,Reactor operation; decommissioning; reactor physics; pressure vessels; safeguarding techniques; fuel fabrication and reprocessing; irradiation facilities; uranium; plutonium and thorium ores; Transuranic elements/actinides; fissile materials (excluding radioactive waste management).
+EAR,Earth Sciences,Geology; mineralogy; geography; geophysics; geo-chemistry; soil science; cartography.
+ENV,Environmental Protection,Measurement and detection of pollution; effects of pollutants; aerosals and particulate emissions; water quality; acid rain; soil pollution; ecology and radio-ecology; limitation/prevention actions on pollution.
+AER,Aerospace Technology,Aeronauticaltechnology; aircraft; avionics; space exploration and technology.
+FOR,Forecasting,Identification of future developments in RTD and long-term strategic options; input to RTD policies; forecasting methodologies.
+MAT,Materials Technology,"Plastics, rubber, polymers and composite materials; adhesives; ceramics; coatings; metals and alloys; iron and steel, steelworks, properties and utilization of steels; miscellaneous materials; properties of materials, corrosion and degradation."
+RWA,Radioactive Waste,Management and storage of radioactive waste; radioactive waste treatment; disposal in deep land or sub-seabed formations; remote handling; container materials and matrices.
+FOO,Food,Nutritional and toxicological properties of foodstuffs; processed agricultural and aquacultural produce; food additives; food containers and handling; food technology.
+MST,Mathematics and Statistics,Mathematical theory; statistical analysis; operational research; numerical analysis; mathematical modelling. (See also application area)
+IND,Industrial Manufacture,Industrial processes; process control; plant design and maintenance; machine tools; advanced design and manufacturing techniques; use of automated tools.
+RSE,Renewable Sources of Energy,Tidal wave and wind energy; hydro-electric power; geothermal energy; energy from biomass; solar energy; photovoltaics; unconventional and alternative energies.
+EDU,Education and Training,"Education of children and adults; university, polytechnic and college students; teaching methods; training needs; in-service training; vocational training; retraining; distance learning."
+WAS,Waste Management,"Non-nuclear waste (for other types see ""Radioactive Waste""); recycling, recovery and reclamation; incineration and pyrolysis; land and sea disposal; bioconversion; landfill; industrial waste; energy from waste."
+SAF,Safety,Safety engineering; safety at work; assessment of risk; reliability of components and systems; industrial hazards;; natural hazards; transportation of hazardous materials; accident analysis and reporting.
+COO,Coordination and Cooperation,"Promotion of joint actions, the exchange of information, mobility, sharing of research resources, comparison exercises."
+RAD,Radiation Protection,"Radiation shielding; dosimetry; radiation and radioisotope effects on man, animals, plants and micro-organisms."
+CON,Construction Technology,"Civil engineering; construction equipment; materials, components and methods; structural reliability; fire resistance; sound insulation; architectural design; building regulations; use of steel, wood, cork, concrete etc. for building purposes."
+STA,Standards,"Technical standards; quality standards; national and international standards; harmonization of standards. (See also ""Reference Materials"")"
+POL,Policies,"Formulation, evaluation or application of policies, policy strategies or plans of action for research and development in science and technology."
+ESV,Energy Saving,Energy conservation; increased efficiency of energy use; energy audits; heat transmission and storage; heat pumps; thermal insulation; use of waste heat.
+SEA,Resources of the Sea and Fisheries,Marine science; oceanography; oceanology; exploitation of the seabed; fisheries; aquaculture.
+EST,Energy Storage and Energy Transport,"The storage, transmission and conversion of energy; use of hydrogen for energy transport; cells; secondary energy vectors."
+FUS,Nuclear Fusion,Tokamaks; plasma physics; electron dynamics and confinement; components and materials; instabilities and turbulence; MHD equilibrium; safeguarding techniques; electric and magnetic fields; impurities; ignition; modelling.
+ECO,Economic Aspects,Economic sciences; economic analysis and theory; economic aspects of RTD.
+TRA,Transport,"Road, track and rail transport; design of vehicles and systems; transportation by sea and inland waterways; air transportation; pipelines; transport infrastructure; prototypes, trial and pilot schemes. (For transportation of hazardous materials see ""Safety"")."
+ELM,Electronics and Microelectronics,"Electronic circuits, components and equipment; semiconductors; magnetic and superconducting materials and devices; power systems; printed circuits and integrated circuits (ICs); microwave technology and waveguides."
+OTH,Other,Other
+LIF,Life Sciences,Biological sciences not included elsewhere; biochemistry; genetics; toxicology.
+AGR,Agriculture,"Livestock production, crops and crop production; managerial and economic aspects of agriculture; veterinary medicine; animal husbandry; control of weeds, pests and diseases of plants; land use; forestry; agro-technology; agro-industrial research."
+TEL,Telecommunications,Communication systems based on electromagnetic waves; radio and television equipment and transmissions; high-definition television (HDTV); satellite communications; integrated broadband communications (IBC); remote sensing; radar; network value-added services.
+REG,Regional Development,RTD activities related to regional development and the restructuring of economic sectors.
+INF,Information and Media,Information services; the media industry; library sciences.
+OET,Other Energy Topics,Demand analysis and utilization strategies; energy statistics; general energy topics not included elsewhere.
+MBI,Medical biotechnology,
+REF,Reference Materials,"Preparation and distribution of certified reference material (CRM) samples for standardization, harmonization and comparison of analyses and measurements; technical specification of CRMs; storage and preservation of CRMs."
+TEC,Other Technology,Textile technology; laser technology; membrane technology; vacuum engineering; hydraulics; particle technology; other specific technologies not included elsewhere.
+EVA,Evaluation,Evaluation of Community RTD programmes; evaluation methodologies.
+FFU,Fossil Fuels,"Coal and hydrocarbons; petroleum products; coke; by-products; transporting and storage of hydrocarbons; liquefaction and gasification of solid fuels; exploration; mining, processing and utilization."
+IPS,Information Processing and Information Systems,Technical aspects of information systems; computer hardware and software; data processing; databases; systems design and documentation; advanced systems architecture; expert systems; artificial inteligence (AI); computer-integrated manufacturing (CIM) systems; computer-aided design (CAD) systems; computer assisted translation (CAT) systems; cognitive science.
+SOC,Social Aspects,Social sciences; use of human resources; ergonomics; social implications of new technology; social effects of technology.
+MET,Meteorology,Climatology; weather forecasting; weather modifications; collection and analysis of meteorological data.
+ITT,Innovation and Technology Transfer,"Development of mechanisms to promote innovation and technology transfer, utilization of the results of research, property rights and patents."
+LEG,Legislation and Regulations,"Formulation, evaluation or application of laws and regulations, administrative measures, codes of conduct, decisions, directives or agreements for research and development in science and technology."
+SCI,Scientific Research,"General scientific and industrial research, or research not included elsewhere."
+MEA,Measurement Methods,Test facilities and methods; applied metrology; biomedical analyses; environmental analyses; verification methods; recording devices; non-destructive testing; online testing.
+BIO,Biotechnology,"Microbiology; cellular and molecular biology; genetic engineering; enzyme engineering; assessment of risk; applications of biotechnology in health, agriculture, food, industry and the environment."
+MED,Medicine and Health,"Human health (for veterinary medicine see ""Agriculture""); the effect of specific environments; public health;industrial medicine; medical research; nutrition; dentistry; nursing; physiology; pharmaceutical products; medical technology."
+PSE,Physical sciences and engineering,
+SPA,Space and satellite research,
+ROB,Robotics,
+ETH,Research ethics,
+SEC,Security,
+CLC,Clean coal technologies ,
+WAT,Water resources and management,
+NNT,Nanotechnology and Nanosciences,
+SDT,Sustainable development ,
+AUT,Automation,
+VAS,Veterinary and animal sciences,
+BIF,Biofuels,
+HFC,Hydrogen and fuel cells,
+CCC,Climate change and Carbon cycle research,
+IBI,Industrial biotech,
+BUS,Business aspects,
+PMM,Project management methodologies ,
+NET,Network technologies ,
+IPR,Intellectual property rights,
+EMP,Employment issues ,
+HCS,Healthcare delivery/services,
+FPR,Funding Programmes,
+ICT,Information and communication technology applications ,
+ABI,Agricultural biotechnology ,
