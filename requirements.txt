@@ -1,7 +1,7 @@
 wandb
 tensorflow
 gym
-psycopg2
+psycopg2-binary
 pandas
 numpy
 matplotlib
