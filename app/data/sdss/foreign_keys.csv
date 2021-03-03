@@ -1,0 +1,7 @@
+table1,attribute1,table2,attribute2
+neighbors,objID,photoobj,objID
+neighbors,neighborobjid,photoobj,objID
+photoobj,objID,specobj,bestobjid
+specobj,specobjid,galspecline,specobjid
+specobj,specobjid,spplines,specobjid
+photoobj,objID,spplines,bestobjid
