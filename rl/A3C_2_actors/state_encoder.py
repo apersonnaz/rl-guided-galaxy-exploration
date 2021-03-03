@@ -8,7 +8,7 @@ from scipy.stats import entropy
 class StateEncoder:
     def __init__(self, pipeline: PipelineWithPrecalculatedSets, target_items=None):
         self.pipeline = pipeline
-        self.target_ratio = 0.05
+        self.target_ratio = 0.1
         self.target_max_reward = 100
         self.initial_target_items = target_items
         self.reward_multiplier = self.target_max_reward / \
