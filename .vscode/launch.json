@@ -1,0 +1,39 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: RL Launcher",
+            "type": "python",
+            "request": "launch",
+            "program": "RL-launcher.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--workers",
+                "2",
+                "--lstm_steps",
+                "10",
+                "--counter_curiosity_ratio",
+                "0.5",
+                "--mode",
+                "scattered"
+            ]
+        },
+        {
+            "name": "Python: API Launcher",
+            "type": "python",
+            "request": "launch",
+            "program": "launcher.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        }
+    ]
+}

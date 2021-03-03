@@ -1,0 +1,12 @@
+
+matplotlib
+scikit_learn
+numpy
+inquirer
+psutil
+pydantic
+pandas
+uvicorn
+fastapi
+aiofiles
+psycopg2

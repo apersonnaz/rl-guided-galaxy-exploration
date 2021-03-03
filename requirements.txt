@@ -1,0 +1,14 @@
+wandb
+tensorflow
+gym
+psycopg2
+pandas
+numpy
+matplotlib
+scikit_learn
+inquirer
+psutil
+pydantic
+uvicorn
+fastapi
+aiofiles

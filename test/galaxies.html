@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Galaxy exploration pipelines</title>
+    <!-- development version, includes helpful console warnings -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+
+    <link rel="icon" type="image/jpeg" href="icon.jpeg" />
+    <link rel="stylesheet" href="galaxies.css">
+
+
+</head>
+
+<body>
+    <div id="app">
+        <div class="container-fluid">
+            <div class="row full-height">
+                <div class="col-md-3">
+                    <div class="row">
+                        <div class="col-md-12 col-xl-12">
+                            <h2>User guidance</h2>
+                            <div class="mb-3  row">
+                                <label class="col-5 col-form-label" for="guidanceMode">Guidance mode</label>
+                                <div class="col-sm-7">
+                                    <select v-model="guidanceMode" id="guidanceMode" class="form-select">
+                                        <option>Fully guided</option>
+                                        <option>Partially guided</option>
+                                        <option>Manual</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <template v-if="guidanceMode !== 'Manual'">
+                                <h2>
+                                    Model selection
+                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#pipeline-details-modal">
+                                        Under the hood
+                                    </button>
+                                </h2>
+                                <div class="mb-3 row">
+                                    <label class="col-5 col-form-label" for="trainingSet">Target set</label>
+                                    <div class="col-sm-7">
+                                        <select v-model="trainingSet" id="trainingSet" class="form-select">
+                                            <option>Scattered</option>
+                                            <option>Concentrated</option>
+                                            <option>Mixed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3 row">
+                                    <label for="curiosity-ratio" class="col-5 col-form-label">Curiosity weight:
+                                        <b>{{curiosityRatio}}%</b></label>
+                                    <div class="col-sm-7">
+                                        <input type="range" v-model="curiosityRatio" class="form-range " min="0"
+                                            max="100" step="25" id="curiosity-ratio">
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="mb-3 row">
+                        <div class="col-md-12">
+                            <h2>Pipeline management</h2>
+                            <div class="btn-group" role="group" aria-label="Basic example">
+                                <button type="button" class="btn btn-secondary" @click.prevent="restart"
+                                    :disabled="history.length ==0">Restart</button>
+                                <a type="button" class="btn btn-secondary" :href="saveLink"
+                                    download="galaxy-pipeline.json" :disabled="history.length ==0">Save</a>
+                                <button type="button" class="btn btn-secondary"
+                                    onclick="document.getElementById('selectedFile').click();">Load<input type="file"
+                                        id="selectedFile" style="display: none;" accept=".json"
+                                        v-on:change="loadPipeline($event)" /></button>
+                            </div>
+                            <div v-if="isLoading" class="alert alert-warning" role="alert">
+                                Loading a pre-recorded pipeline. Any change will prevent further loading.
+                                <span class="badge badge-light">{{ loadSteps.length}} operation(s) remaining</span>
+                            </div>
+                        </div>
+
+                        <div class="modal fade" id="details-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                            aria-hidden="true">
+                            <div class="modal-dialog modal-xl">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">Details and graphs</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Graphs and stuff...
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary"
+                                            data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-md-5 h-100">
+                    <h2>Current operator results <span class="badge bg-secondary" v-if="utility !== null">Utility:
+                            {{utility.toFixed(4)}}</span><span class="badge bg-secondary"
+                            v-if="novelty !== null">Novelty:
+                            {{novelty.toFixed(4)}}</span></h2>
+                    <div class="h-95 scrollable" v-if="sortedSets.length >0">
+                        <div v-for="set in sortedSets" :key="set.id" v-on:click.stop="setClicked(set)"
+                            v-bind:class="{row:true, selectable:true, selected:set.id == selectedSetId}"
+                            style="max-width:99%" class="m-1">
+                            <div class=" col-12 ">
+                                <h6>Set {{set_id(set)}}
+                                    <span class="badge bg-success">{{set.length}}
+                                        galaxies</span>
+                                    <span class="badge bg-dark" v-if="set.silhouette !== null">silhouette:
+                                        {{set.silhouette.toFixed(4)}}</span>
+                                    <span class="badge bg-dark" v-if="set.novelty !== null">novelty:
+                                        {{set.novelty.toFixed(4)}}</span>
+                                    <span v-for="item in set.predicate"
+                                        class="badge bg-info">{{item.dimension.replace('galaxies.','')}}
+                                        = {{item.value}}</span>
+                                </h6>
+                                <img class="zoom" v-for="item in set.data" :key="item.message" :src=url(item)>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mh-95 scrollable" v-else>
+                        Nothing to show yet!
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <template v-if="guidanceMode !== 'Fully guided'">
+                        <template v-if="!loading">
+                            <div class="mb-3  row">
+                                <div class="col-md-12 col-xl-12">
+                                    <!-- <template v-if="inputSet !== null">
+                                        <h2>Previous input set</h2>
+                                        <span v-if="inputSet === null">Complete dataset</span>
+                                        <h6 v-else>Set {{inputSet.id}}
+                                            <span class="badge bg-success">{{inputSet.length}}
+                                                galaxies</span>
+                                            <span v-for="item in inputSet.predicate"
+                                                class="badge bg-info">{{item.dimension.replace('galaxies.','')}}
+                                                = {{item.value}}</span>
+                                        </h6>
+                                    </template> -->
+                                    <h2>Operator selection</h2>
+                                    <form>
+                                        <div class="mb-3">
+                                            <select v-model="operator" id="operator" class="form-select">
+                                                <option disabled value="">Please select one</option>
+                                                <option>facet</option>
+                                                <option :disabled="sets.length == 0">superset</option>
+                                                <option :disabled="sets.length == 0">neighbors</option>
+                                                <option :disabled="selectedSetPredicateCount < 2">distribution</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3" v-if="operator == 'facet'">
+                                            <label class="form-label">Select the dimensions to group on</label>
+                                            <template v-for="dimension in facetDimensions">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" :id="dimension"
+                                                        :value="dimension" v-model="checkedDimension">
+                                                    <label class="form-check-label" for="dimension" v-if="dimension.length == 1">
+                                                        magnitude {{dimension}}
+                                                    </label>
+                                                    <label class="form-check-label" for="dimension" v-else>
+                                                        {{dimension}}
+                                                    </label>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div class="mb-3" v-if="operator == 'neighbors'">
+                                            <label class="form-label">Select on which dimensions</label><br />
+                                            <template v-for="dimension in neighborsDimensions">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" :id="dimension"
+                                                        :value="dimension" v-model="checkedDimension">
+                                                        <label class="form-check-label" for="dimension" v-if="dimension.length == 1">
+                                                            magnitude {{dimension}}
+                                                        </label>
+                                                        <label class="form-check-label" for="dimension" v-else>
+                                                            {{dimension}}
+                                                        </label>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <!-- <input type="checkbox" :id="getscores" :value="getscores" v-model="getscores">
+                                    <label :for="getscores">get the summary scores</label><br />
+                                    <input type="checkbox" :id="getPredictedScores" :value="getPredictedScores" v-model="getPredictedScores">
+                                    <label :for="getPredictedScores">get the predicted scores</label><br /> -->
+                                        <div class="mb-3">
+                                            <button class="btn btn-primary" @click.prevent="submitted"
+                                                v-if="operator !== ''">Execute!
+                                            </button>
+                                            <button type="button" class="btn btn-danger" @click.prevent="undo"
+                                                v-if="history.length > 1">Undo</button>
+                                        </div>
+
+                                    </form>
+                                </div>
+                            </div>
+                           
+                            <!-- <div class="row" v-if="predictedScores.length > 0">
+                            <div class="col-12">
+                                <h2>Predicted utility scores</h2>
+                                <table class="table">
+                                    <thead>
+                                      <tr>
+                                        <th scope="col">set ID</th>
+                                        <th scope="col">operation</th>
+                                        <th scope="col">attribute</th>
+                                        <th scope="col">utility</th>
+                                        <th scope="col">novelty</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="item in predictedScores" v-on:click="loadPrediction(item.setId, item.operation, item.attribute)" :key="item.setId+item.operation+item.attribute" 
+                                            v-bind:class="{predictedLine:true, selectedPrediction: isSelectedPrediction(item.setId, item.operation, item.attribute)}">
+                                            <td>{{ item.setId }}</td>
+                                            <td>{{ item.operation }}</td>
+                                            <td>{{ item.attribute }}</td>
+                                            <td>{{ item.utility_score.toFixed(4) }}</td>
+                                            <td>{{ item.novelty_score.toFixed(4) }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div> -->
+                        </template>
+                        <template v-else>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="mt-3 mb-4">
+                                        <button class="btn btn-primary" type="button" disabled>
+                                            <span class="spinner-grow spinner-grow-sm" role="status"
+                                                aria-hidden="true"></span>
+                                            Executing by_{{operator}}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                    <template v-else>
+                        <div class="row">
+                            <div class="col-md-12 col-xl-12">
+                                <h2>Guidance control</h2>
+                                <button type="button" class="btn btn-primary" @click.prevent="start">Start
+                                    pipeline</button>
+                                <!-- <button type="button" class="btn btn-danger" @click.prevent="stop">stop</button> -->
+                            </div>
+                        </div>
+                    </template>
+                    <div class="mb-3 row">
+                        <div class="col-12">
+                            <h2>Current pipeline
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                    data-bs-target="#pipeline-details-modal">
+                                    Under the hood
+                                </button>
+                            </h2>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <div class="col-12" style="display: -webkit-inline-box;overflow: auto">
+
+                            <!-- <div class="card-group"> -->
+                            <div class="card" v-for="item in history" :key="history.indexOf(item)" v-bind:id="'operation-'+history.indexOf(item)">
+                                <div class="card-body">
+                                    <img style="width:55px; height:55px"
+                                        v-bind:src="'/test/img/'+item.operator+'.png' ">
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted">reward: 0</small>
+                                </div>
+                            </div>
+                            <!-- </div> -->
+                            <!-- </div> -->
+                        </div>
+                        <div class="modal fade" id="pipeline-details-modal" tabindex="-1"
+                            aria-labelledby="exampleModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-xl">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">Details and graphs</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Graphs and stuff...
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary"
+                                            data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0"
+        crossorigin="anonymous"></script>
+    <script src="galaxies.js"></script>
+</body>
+
+</html>
