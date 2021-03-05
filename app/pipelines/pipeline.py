@@ -318,25 +318,30 @@ class Pipeline:
                 raise Exception(
                     "Superset impossible, only one attribute is filtered")
             else:
+                candidates = []
                 for attribute in predicate_attributes:
                     new_dataset = Dataset(predicate=copy.deepcopy(
                         dataset.predicate), joins=copy.deepcopy(dataset.joins))
                     new_dataset.predicate.remove_attribute(attribute)
                     self.reload_set_data(
                         new_dataset, apply_joins=True, apply_predicate=True)
-                    new_count = len(new_dataset.data)
-                    # if new_count == original_count:
-                    #     dataset.predicate = new_predicate
-                    # el
-                    if len(new_sets) < number_of_sets_to_return:
-                        new_sets.append(new_dataset)
-                    else:
-                        for other_set_index, other_set in enumerate(new_sets):
-                            if new_count < len(other_set.data) and new_count != original_count:
-                                new_sets[other_set_index] = new_dataset
+                    candidates.append(new_dataset)
+
+                candidates = sorted(candidates, key=lambda candidate: len(candidate.data), reverse=True)
+                return candidates[0:number_of_sets_to_return]
+                    # new_count = len(new_dataset.data)
+                    # # if new_count == original_count:
+                    # #     dataset.predicate = new_predicate
+                    # # el
+                    # if len(new_sets) < number_of_sets_to_return:
+                    #     new_sets.append(new_dataset)
+                    # else:
+                    #     for other_set_index, other_set in enumerate(new_sets):
+                    #         if new_count < len(other_set.data) and new_count != original_count:
+                    #             new_sets[other_set_index] = new_dataset
 
                 # print(f"New set item count: {smallest_item_count}")
-                return new_sets
+                # return new_sets
 
     def by_overlap(self, dataset: Dataset, number_of_groups=3, max_seconds=1, return_datasets=True, logger=None):
         raise NotImplementedError()

@@ -7,6 +7,8 @@ import random
 from app.pipelines.pipeline_precalculated_sets import PipelineWithPrecalculatedSets
 from os import listdir
 from .state_encoder import StateEncoder
+from .target_set_generator import TargetSetGenerator
+from .action_manager import ActionManager
 
 class PipelineEnvironment(gym.Env):
     def __init__(self, pipeline: PipelineWithPrecalculatedSets, mode="simple", target_set_name=None, number_of_examples=3, agentId=-1, episode_steps=50, target_items=None):
@@ -23,21 +25,15 @@ class PipelineEnvironment(gym.Env):
             with open(f"./rl/targets/{self.target_set_name}.json") as f:
                 self.state_encoder = StateEncoder(pipeline, target_items=set(json.load(f)))
         elif self.mode == "scattered" and target_items == None:
-            self.state_encoder = StateEncoder(pipeline,  target_items=self.get_diverse_target_set(
-                number_of_samples=100))    
+            self.state_encoder = StateEncoder(pipeline,  target_items=TargetSetGenerator.get_diverse_target_set(
+                number_of_samples=50))    
         else:
             self.state_encoder = StateEncoder(pipeline, target_items=target_items)
 
-        self.set_action_types = ["by_superset",
-                                 "by_distribution"]
-        self.set_action_types += list(
-            map(lambda x: f"by_facet-&-{x}", self.pipeline.exploration_columns))
-        self.set_action_types += list(
-            map(lambda x: f"by_neighbors-&-{x}", self.pipeline.exploration_columns))
-
+        self.action_manager = ActionManager(pipeline)
         self.set_action_space = spaces.Discrete(self.pipeline.discrete_categories_count)
         self.operation_action_space = spaces.Discrete(
-            len(self.set_action_types))
+            len(self.action_manager.set_action_types))
 
         self.set_state_dim = self.pipeline.discrete_categories_count * \
             len(self.state_encoder.set_description)
@@ -68,6 +64,16 @@ class PipelineEnvironment(gym.Env):
 
         return self.set_state
 
+    def fix_possible_operation_action_probs(self, set_index, probs):
+        if len(self.datasets) == 0:
+            dataset = self.pipeline.get_dataset()
+        else:
+            dataset = self.datasets[set_index]
+        return self.action_manager.fix_possible_operation_action_probs(dataset, probs)
+
+    def fix_possible_set_action_probs(self, probs):
+        return self.action_manager.fix_possible_set_action_probs(self.datasets, probs)
+
     def get_target_set_and_examples(self):
         available_target_sets = ["green-peas",
                                  "hiis", "lcgs", "low-metallicity-bcds"]
@@ -86,19 +92,6 @@ class PipelineEnvironment(gym.Env):
                 self.example_state.append(
                     self.pipeline.ordered_dimensions[column].index(str(item[column])))
 
-    def get_diverse_target_set(self, number_of_samples=10):
-        self.target_set_index = -1
-        initial_target_items = []
-        for file in listdir("./rl/targets/"):
-            with open("./rl/targets/"+file) as f:
-                items = json.load(f)
-                if len(items) > number_of_samples:
-                    initial_target_items += random.choices(
-                        items, k=number_of_samples)
-                else:
-                    initial_target_items += items
-        return set(initial_target_items)
-
     def get_operation_state(self, set_index):
         if len(self.datasets) == 0:
             dataset = self.pipeline.get_dataset()
@@ -108,12 +101,12 @@ class PipelineEnvironment(gym.Env):
         if self.mode == 'by_example':
             state += self.example_state
 
-        encoded_set = self.state_encoder.encode_dataset(dataset)
+        encoded_set, reward = self.state_encoder.encode_dataset(dataset, get_reward=False)
         state += encoded_set
         return np.array(state)
 
     def get_set_state(self):
-        encoded_sets, reward = self.state_encoder.encode_datasets(datasets=self.datasets, get_reward=True)
+        encoded_sets, reward = self.state_encoder.encode_datasets(datasets=self.datasets)
         state = []
 
         if self.mode == 'by_example':
@@ -124,31 +117,7 @@ class PipelineEnvironment(gym.Env):
     def render(self):
         i = 1
 
-    def fix_possible_set_action_probs(self, probs):
-        if len(self.datasets) == 0:
-            return [np.nan]*self.pipeline.discrete_categories_count
-        else:
-            probs[len(self.datasets):] = [0] * \
-                (len(probs) - len(self.datasets))
-            return [float(i)/sum(probs) for i in probs]
-
-    def fix_possible_operation_action_probs(self, probs, set_index):
-        if len(self.datasets) == 0:
-            dataset = self.pipeline.get_dataset()
-        else:
-            dataset = self.datasets[set_index]
-        for dimension in self.exploration_dimensions:
-            predicate_item = next((
-                x for x in dataset.predicate.components if x.attribute == dimension), None)
-            if predicate_item != None:
-                probs[self.set_action_types.index(
-                    "by_facet-&-" + dimension)] = 0
-            else:
-               probs[self.set_action_types.index(
-                   "by_neighbors-&-" + dimension)] = 0
-        if len(dataset.predicate.components) <= 1:
-            probs[self.set_action_types.index("by_superset")] = 0
-        return [float(i)/sum(probs) for i in probs]
+    
 
 
     def step(self, set_index, operation_index=-1):
@@ -159,7 +128,7 @@ class PipelineEnvironment(gym.Env):
             self.input_set = self.pipeline.get_dataset()
         else:
             self.input_set = self.datasets[set_index]
-        set_action_array = self.set_action_types[operation_index].split(
+        set_action_array = self.action_manager.set_action_types[operation_index].split(
             '-&-')
         self.operation_counter[set_action_array[0]] += 1
         if set_action_array[0] == "by_superset":

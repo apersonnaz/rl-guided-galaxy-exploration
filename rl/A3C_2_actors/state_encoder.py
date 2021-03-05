@@ -6,13 +6,14 @@ from typing import List
 from scipy.stats import entropy
 
 class StateEncoder:
-    def __init__(self, pipeline: PipelineWithPrecalculatedSets, target_items=None):
+    def __init__(self, pipeline: PipelineWithPrecalculatedSets, target_items=None, found_items_with_ratio=None):
         self.pipeline = pipeline
         self.target_ratio = 0.1
         self.target_max_reward = 100
-        self.initial_target_items = target_items
+        self.target_items = set(target_items)
+        self.found_items_with_ratio = found_items_with_ratio
         self.reward_multiplier = self.target_max_reward / \
-            (len(self.initial_target_items)*self.target_ratio)
+            (len(self.target_items)*self.target_ratio)
 
         self.set_description = ["item count"]
         for column in self.pipeline.exploration_columns:
@@ -21,54 +22,48 @@ class StateEncoder:
             self.set_description.append(f"entropy {column}")
 
     def reset(self):
-        self.ratio_item_dict = {}
-        self.target_items = self.initial_target_items
+        self.found_items_with_ratio = {}
 
-    def encode_datasets(self, datasets: List[Dataset], get_reward=False):
+    def encode_datasets(self, datasets: List[Dataset]):
         encoded_sets = []
         rewards = 0
         for index, dataset in enumerate(datasets):
-            encoded_set, reward = self.encode_dataset(
-                dataset, get_reward=get_reward)
+            encoded_set, reward = self.encode_dataset(dataset)
             encoded_sets += encoded_set
             rewards += reward
         encoded_sets += [-1] * (10-len(datasets)) * \
             len(self.set_description)
-        if get_reward:
-            return encoded_sets, rewards
-        else:
-            return encoded_sets
 
-    def encode_dataset(self, dataset: Dataset, get_reward=False):
+        return encoded_sets, rewards
+       
+
+    def encode_dataset(self, dataset: Dataset, get_reward=True):
         encoded_set = []
         encoded_set.append(len(dataset.data))
         reward = 0
         if get_reward:
-            new_target_found_in_dataset = set(
-                dataset.data["galaxies.objID"].to_list()) & self.target_items
             original_target_found_in_dataset = set(
-                dataset.data["galaxies.objID"].to_list()) & self.initial_target_items
+                dataset.data["galaxies.objID"].to_list()) & self.target_items
+            new_target_found_in_dataset = original_target_found_in_dataset - set(self.found_items_with_ratio.keys())
             reward_set_size_ratio = len(
                 original_target_found_in_dataset)/len(dataset.data)
             if len(new_target_found_in_dataset) > 0:
-                self.target_items = set([
-                    t for t in self.target_items if t not in new_target_found_in_dataset])
                 reward = len(new_target_found_in_dataset) * \
                     reward_set_size_ratio*self.reward_multiplier
                 ratio_item_dict = dict(zip(new_target_found_in_dataset, [
                                        reward_set_size_ratio]*len(new_target_found_in_dataset)))
-                self.ratio_item_dict.update(ratio_item_dict)
+                self.found_items_with_ratio.update(ratio_item_dict)
 
             old_target_found_in_dataset = original_target_found_in_dataset - \
                 new_target_found_in_dataset
             better_ratio_items = list(filter(
-                lambda x: x in old_target_found_in_dataset and self.ratio_item_dict[x] < reward_set_size_ratio, self.ratio_item_dict))
+                lambda x: x in old_target_found_in_dataset and self.found_items_with_ratio[x] < reward_set_size_ratio, self.found_items_with_ratio))
             if len(better_ratio_items) > 0:
                 reward += len(better_ratio_items) * \
                     reward_set_size_ratio*self.reward_multiplier
                 ratio_item_dict = dict(
                     zip(better_ratio_items, [reward_set_size_ratio]*len(better_ratio_items)))
-                self.ratio_item_dict.update(ratio_item_dict)
+                self.found_items_with_ratio.update(ratio_item_dict)
 
         data = dataset.data
         for dimension in self.pipeline.exploration_columns:
@@ -83,7 +78,6 @@ class StateEncoder:
             counts = data[dimension].value_counts()
             encoded_set.append(entropy(counts))
 
-        if get_reward:
-            return encoded_set, reward
-        else:
-            return encoded_set
+
+        return encoded_set, reward
+

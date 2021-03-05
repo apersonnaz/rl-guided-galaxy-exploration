@@ -28,9 +28,9 @@ tf.keras.backend.set_floatx('float64')
 now = datetime.now()
 parser = argparse.ArgumentParser()
 parser.add_argument('--gamma', type=float, default=0.99)
-parser.add_argument('--update_interval', type=int, default=50)
-parser.add_argument('--actor_lr', type=float, default=0.00002)
-parser.add_argument('--critic_lr', type=float, default=0.00008)
+parser.add_argument('--update_interval', type=int, default=30)
+parser.add_argument('--actor_lr', type=float, default=0.00003)
+parser.add_argument('--critic_lr', type=float, default=0.00003)
 parser.add_argument('--icm_lr', type=float, default=0.05)
 parser.add_argument('--workers', type=int, default=6)
 parser.add_argument('--lstm_steps', type=int, default=10)
@@ -96,7 +96,7 @@ class Agent:
 
         for i in range(self.num_workers):
             env = PipelineEnvironment(
-                self.pipeline, target_set_name=args.target_set, mode=args.mode, agentId=i, episode_steps=self.episode_steps, target_items=self.env.state_encoder.initial_target_items)
+                self.pipeline, target_set_name=args.target_set, mode=args.mode, agentId=i, episode_steps=self.episode_steps, target_items=self.env.state_encoder.target_items)
 
             workers.append(WorkerAgent(
                 env, self.global_set_actor, self.global_operation_actor, self.global_critic, max_episodes, self.curiosity_module, self.set_op_counters, agentId=i, episode_steps=self.episode_steps))
@@ -208,7 +208,7 @@ class WorkerAgent(Thread):
                 probs = self.operation_actor.model.predict(
                     np.array(operation_action_steps).reshape((1, self.steps, self.operation_state_dim)))
                 probs = self.env.fix_possible_operation_action_probs(
-                    probs[0], set_action)
+                     set_action, probs[0])
                 if np.isnan(probs[0]):
                     operation_action = self.env.get_random_operation(
                         set_action)
@@ -342,10 +342,10 @@ class WorkerAgent(Thread):
                 'reward': episode_reward,
                 'sets_viewed': len(self.env.sets_viewed),
                 'sets_reviewed': self.env.set_review_counter,
-                'min_target_found_set_size_ratio': min(self.env.state_encoder.ratio_item_dict.values()) if len(self.env.state_encoder.ratio_item_dict) > 0 else 0,
-                'max_target_found_set_size_ratio': max(self.env.state_encoder.ratio_item_dict.values()) if len(self.env.state_encoder.ratio_item_dict) > 0 else 0,
-                'avg_target_found_set_size_ratio': sum(self.env.state_encoder.ratio_item_dict.values())/len(self.env.state_encoder.ratio_item_dict) if len(self.env.state_encoder.ratio_item_dict) > 0 else 0,
-                'item_found_ratio': len(self.env.state_encoder.ratio_item_dict)/len(self.env.state_encoder.initial_target_items),
+                'min_target_found_set_size_ratio': min(self.env.state_encoder.found_items_with_ratio.values()) if len(self.env.state_encoder.found_items_with_ratio) > 0 else 0,
+                'max_target_found_set_size_ratio': max(self.env.state_encoder.found_items_with_ratio.values()) if len(self.env.state_encoder.found_items_with_ratio) > 0 else 0,
+                'avg_target_found_set_size_ratio': sum(self.env.state_encoder.found_items_with_ratio.values())/len(self.env.state_encoder.found_items_with_ratio) if len(self.env.state_encoder.found_items_with_ratio) > 0 else 0,
+                'item_found_ratio': len(self.env.state_encoder.found_items_with_ratio)/len(self.env.state_encoder.target_items),
                 'extrinsic_reward': episode_extrinsic_reward,
                 'intrisic_reward': episode_intrinsic_reward,
                 'avg_op_counter': episode_total_op_counters/self.episode_steps,

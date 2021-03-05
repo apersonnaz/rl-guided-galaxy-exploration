@@ -1,8 +1,10 @@
+from os import stat
 import traceback
-from typing import List
+from typing import List, Dict, Optional
 import json
 
 from fastapi import Body, Depends, FastAPI, HTTPException, Query
+from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from .format_helper import FormatHelper
 from .models import (ByFacetBody, ByFilterBody, ByJoinBody, ByOverlapBody, ByNeighborsBody,
@@ -14,6 +16,8 @@ from .pipelines.pipeline_precalculated_sets import \
 # from .pipelines.pipeline_sql import PipelineSql
 from .pipelines.predicateitem import JoinParameters
 from .galaxy_methods import *
+from rl.A3C_2_actors.target_set_generator import TargetSetGenerator
+from app.model_manager import ModelManager
 
 app = FastAPI(title="CNRS pipelines API",
               description="API providing access to the CNRS pipelines operators",
@@ -27,6 +31,8 @@ database_pipeline_cache["galaxies"] = PipelineWithPrecalculatedSets(
 #     "unics_cordis", data_folder=data_folder, discrete_categories_count=10)
 # database_pipeline_cache["sdss"] = PipelineSql(
 #     "sdss", data_folder=data_folder, discrete_categories_count=10)
+
+model_manager = ModelManager(database_pipeline_cache["galaxies"])
 
 app.mount("/test", StaticFiles(directory="test"), name="test")
 
@@ -218,23 +224,47 @@ async def by_overlap(requestBody: ByOverlapBody):
         return OperatorRequestResponse(error=1, errorMsg=str(error))
 
 
-@app.get("/operators/by-facet-g",
+class GalaxyRequest(BaseModel):
+    input_set_id: Optional[int]=None
+    dimensions: Optional[List[str]]=None
+    get_scores: Optional[bool]=False
+    get_predicted_scores: Optional[bool]=False
+    target_set: Optional[str]=None
+    curiosity_weight: Optional[float]=None
+    found_items_with_ratio: Optional[Dict[str, float]]=None
+    target_items: Optional[List[int]] = None
+    previous_set_states: Optional[List[List[float]]] = None
+    previous_operation_states: Optional[List[List[float]]] = None
+    seen_predicates: Optional[List[str]] = []
+    dataset_ids: Optional[List[int]] = None
+
+@app.put("/operators/by_facet-g",
          description="Groups the input set items by a list of provided attributes and returns the n biggest resulting sets",
          tags=["operators"])
-async def by_facet_g(input_set_id: int = -1, dimensions: List[str] = Query([]), get_scores: bool = False, get_predicted_scores: bool = False, seen_predicates: List[str] = Query([])):
+async def by_facet_g( galaxy_request:GalaxyRequest):
     result = []
     try:
         # print(requestBody.json())
         pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
-        if input_set_id == -1:
+        if galaxy_request.input_set_id == -1:
             dataset = pipeline.get_dataset()
         else:
-            dataset = pipeline.get_groups_as_datasets([input_set_id])[0]
-        number_of_groups = 10 if len(dimensions) == 1 else 5
+            dataset = pipeline.get_groups_as_datasets([galaxy_request.input_set_id])[0]
+        number_of_groups = 10 if len(galaxy_request.dimensions) == 1 else 5
         result_sets = pipeline.by_facet(
-            dataset=dataset, attributes=dimensions, number_of_groups=number_of_groups)
-        result = get_galaxies_sets(result_sets, pipeline, get_scores,
-                                   get_predicted_scores, seen_predicates=set(seen_predicates))
+            dataset=dataset, attributes=galaxy_request.dimensions, number_of_groups=number_of_groups)
+        result_sets = [d for d in result_sets if d.set_id != None and d.set_id >= 0]
+        if len(result_sets) == 0:
+            result_sets = [dataset] 
+        prediction_result = {}
+        if galaxy_request.target_set != None and galaxy_request.curiosity_weight != None:
+            prediction_result = model_manager.get_prediction( result_sets, galaxy_request.target_set, galaxy_request.curiosity_weight, galaxy_request.target_items, 
+                galaxy_request.found_items_with_ratio, galaxy_request.previous_set_states, galaxy_request.previous_operation_states)
+
+        result = get_galaxies_sets(result_sets, pipeline, galaxy_request.get_scores,
+                                   galaxy_request.get_predicted_scores, seen_predicates=set(galaxy_request.seen_predicates))
+        result.update(prediction_result)
+        
         return result
     except Exception as error:
         print(error)
@@ -247,21 +277,30 @@ async def by_facet_g(input_set_id: int = -1, dimensions: List[str] = Query([]), 
         return 0
 
 
-@app.get("/operators/by-superset-g",
+@app.put("/operators/by_superset-g",
          description="Returns the smallest set completely overlapping with the input set",
          tags=["operators"])
-async def by_superset_g(input_set_id: int = -1, get_scores: bool = False, get_predicted_scores: bool = False, seen_predicates: List[str] = Query([])):
+async def by_superset_g(galaxy_request:GalaxyRequest):
     result = []
     try:
         pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
-        if input_set_id == -1:
+        if galaxy_request.input_set_id == -1:
             dataset = pipeline.get_dataset()
         else:
-            dataset = pipeline.get_groups_as_datasets([input_set_id])[0]
+            dataset = pipeline.get_groups_as_datasets([galaxy_request.input_set_id])[0]
         result_sets = pipeline.by_superset(
             dataset=dataset)
-        result = get_galaxies_sets(result_sets, pipeline, get_scores,
-                                   get_predicted_scores, seen_predicates=set(seen_predicates))
+        result_sets = [d for d in result_sets if d.set_id != None and d.set_id >= 0]
+        if len(result_sets) == 0:
+            result_sets = [dataset] 
+        prediction_result = {}
+        if galaxy_request.target_set != None and galaxy_request.curiosity_weight != None:
+            prediction_result = model_manager.get_prediction(result_sets, galaxy_request.target_set, galaxy_request.curiosity_weight, galaxy_request.target_items, 
+                galaxy_request.found_items_with_ratio, galaxy_request.previous_set_states, galaxy_request.previous_operation_states)
+
+        result = get_galaxies_sets(result_sets, pipeline, galaxy_request.get_scores,
+                                   galaxy_request.get_predicted_scores, seen_predicates=set(galaxy_request.seen_predicates))
+        result.update(prediction_result)
         return result
     except Exception as error:
         print(error)
@@ -274,19 +313,29 @@ async def by_superset_g(input_set_id: int = -1, get_scores: bool = False, get_pr
         return 0
 
 
-@app.get("/operators/by-neighbors-g",
+@app.put("/operators/by_neighbors-g",
          description="",
          tags=["operators"])
-async def by_neighbors_g(input_set_id: int, dimensions: List[str] = Query([]), get_scores: bool = False, get_predicted_scores: bool = False, seen_predicates: List[str] = Query([])):
+async def by_neighbors_g(galaxy_request:GalaxyRequest):
     result = []
     try:
         # print(requestBody.json())
         pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
-        dataset = pipeline.get_groups_as_datasets([input_set_id])[0]
+        dataset = pipeline.get_groups_as_datasets([galaxy_request.input_set_id])[0]
         result_sets = pipeline.by_neighbors(
-            dataset=dataset, attributes=dimensions)
-        result = get_galaxies_sets(result_sets, pipeline, get_scores,
-                                   get_predicted_scores, seen_predicates=set(seen_predicates))
+            dataset=dataset, attributes=galaxy_request.dimensions)
+        result_sets = [d for d in result_sets if d.set_id != None and d.set_id >= 0]
+        if len(result_sets) == 0:
+            result_sets = [dataset] 
+
+        prediction_result = {}
+        if galaxy_request.target_set != None and galaxy_request.curiosity_weight != None:
+            prediction_result = model_manager.get_prediction(result_sets, galaxy_request.target_set, galaxy_request.curiosity_weight, galaxy_request.target_items, 
+                galaxy_request.found_items_with_ratio, galaxy_request.previous_set_states, galaxy_request.previous_operation_states)
+
+        result = get_galaxies_sets(result_sets, pipeline, galaxy_request.get_scores,
+                                   galaxy_request.get_predicted_scores, seen_predicates=set(galaxy_request.seen_predicates))
+        result.update(prediction_result)
         return result
     except Exception as error:
         print(error)
@@ -299,19 +348,28 @@ async def by_neighbors_g(input_set_id: int, dimensions: List[str] = Query([]), g
         return 0
 
 
-@app.get("/operators/by-distribution-g",
+@app.put("/operators/by_distribution-g",
          description="",
          tags=["operators"])
-async def by_distribution_g(input_set_id: int, get_scores: bool = False, get_predicted_scores: bool = False, seen_predicates: List[str] = Query([])):
+async def by_distribution_g(galaxy_request:GalaxyRequest):
     result = []
     try:
         # print(requestBody.json())
         pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
-        dataset = pipeline.get_groups_as_datasets([input_set_id])[0]
+        dataset = pipeline.get_groups_as_datasets([galaxy_request.input_set_id])[0]
         result_sets = pipeline.by_distribution(
             dataset=dataset)
-        result = get_galaxies_sets(result_sets, pipeline, get_scores,
-                                   get_predicted_scores, seen_predicates=set(seen_predicates))
+        result_sets = [d for d in result_sets if d.set_id != None and d.set_id >= 0]
+        if len(result_sets) == 0:
+            result_sets = [dataset] 
+        prediction_result = {}
+        if galaxy_request.target_set != None and galaxy_request.curiosity_weight != None:
+            prediction_result = model_manager.get_prediction( result_sets, galaxy_request.target_set, galaxy_request.curiosity_weight, galaxy_request.target_items, 
+                galaxy_request.found_items_with_ratio, galaxy_request.previous_set_states, galaxy_request.previous_operation_states)
+
+        result = get_galaxies_sets(result_sets, pipeline, galaxy_request.get_scores,
+                                   galaxy_request.get_predicted_scores, seen_predicates=set(galaxy_request.seen_predicates))
+        result.update(prediction_result)
         return result
     except Exception as error:
         print(error)
@@ -324,7 +382,7 @@ async def by_distribution_g(input_set_id: int, get_scores: bool = False, get_pre
         return 0
 
 
-@app.get("/operators/get-dataset-information",
+@app.get("/app/get-dataset-information",
          description="",
          tags=["info"])
 async def get_dataset_information():
@@ -334,3 +392,34 @@ async def get_dataset_information():
         "ordered_dimensions": pipeline.ordered_dimensions,
         "length": len(pipeline.initial_collection)
     }
+
+@app.get("/app/get-target-items-and-prediction",
+         description="",
+         tags=["info"])
+async def get_target_items_and_prediction( target_set: str = None, curiosity_weight: float = None, dataset_ids: List[int] = []):    
+    pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
+    target_items = TargetSetGenerator.get_diverse_target_set(number_of_samples=50)
+    items_found_with_ratio = {}
+    if len(dataset_ids) == 0:
+        datasets = [pipeline.get_dataset()] 
+    else:
+        datasets = pipeline.get_groups_as_datasets(dataset_ids)
+    
+    prediction_results = model_manager.get_prediction(datasets, target_set, curiosity_weight, target_items, items_found_with_ratio)
+    prediction_results["targetItems"] = target_items
+    return prediction_results
+
+@app.put("/app/load-model",
+         description="",
+         tags=["info"])
+async def load_model( galaxy_request:GalaxyRequest):    
+    pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
+    if len(galaxy_request.dataset_ids) == 0:
+        datasets = [pipeline.get_dataset()] 
+    else:
+        datasets = pipeline.get_groups_as_datasets(galaxy_request.dataset_ids)
+    
+    prediction_results = model_manager.get_prediction(datasets, galaxy_request.target_set, galaxy_request.curiosity_weight, galaxy_request.target_items, galaxy_request.found_items_with_ratio,
+        previous_set_states=galaxy_request.previous_set_states, previous_operation_states=galaxy_request.previous_operation_states)
+
+    return prediction_results

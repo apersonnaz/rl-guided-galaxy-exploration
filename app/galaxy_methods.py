@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.spatial import distance_matrix
 
+
 def get_utility_scores(datasets, pipeline):
-    if len([ d for d in datasets if len(d.data) > 0]) <= 1:
+    if len([d for d in datasets if len(d.data) > 0]) <= 1:
         return 0, [0]
     mean_distances_to_self_set = []
     mean_distances_to_other_sets = []
@@ -55,20 +56,26 @@ def get_utility_scores(datasets, pipeline):
     return global_sum/global_count, sets_silhouette_scores
     # print(f"Set scores: {set_silhouette_score}, Summary score: {global_sum/global_count}")
 
+
 def get_novelty_scores(datasets, seen_predicates, pipeline):
-    possible_predicate_count = pipeline.discrete_categories_count * len(pipeline.exploration_columns)
+    possible_predicate_count = pipeline.discrete_categories_count * \
+        len(pipeline.exploration_columns)
     sets_novelty_scores = []
     summary_predicates = set()
     for dataset in datasets:
-        set_predicates = set(map(lambda x: f"{x.attribute}{x.operator}{x.value}", dataset.predicate.components))
+        set_predicates = set(map(
+            lambda x: f"{x.attribute}{x.operator}{x.value}", dataset.predicate.components))
         summary_predicates.update(set_predicates)
         set_predicates.update(seen_predicates)
-        set_score = len(set_predicates)/possible_predicate_count - len(seen_predicates)/possible_predicate_count
+        set_score = len(set_predicates)/possible_predicate_count - \
+            len(seen_predicates)/possible_predicate_count
         sets_novelty_scores.append(set_score)
 
     summary_predicates.update(seen_predicates)
-    summary_score = len(summary_predicates)/possible_predicate_count - len(seen_predicates)/possible_predicate_count
+    summary_score = len(summary_predicates)/possible_predicate_count - \
+        len(seen_predicates)/possible_predicate_count
     return summary_score, sets_novelty_scores, summary_predicates
+
 
 def get_future_scores(sets, pipeline, seen_predicates):
     operations = []
@@ -82,28 +89,34 @@ def get_future_scores(sets, pipeline, seen_predicates):
                         dataset=set, attributes=[attribute])
                 else:
                     operation = "facet"
-                    resulting_sets = pipeline.by_facet(dataset=set, attributes=[attribute], number_of_groups=10)
-                global_score, sets_scores = get_utility_scores(resulting_sets, pipeline)  
-                summary_novelty_score, sets_novelty_scores, final_predicates = get_novelty_scores(resulting_sets, seen_predicates, pipeline)
+                    resulting_sets = pipeline.by_facet(
+                        dataset=set, attributes=[attribute], number_of_groups=10)
+                global_score, sets_scores = get_utility_scores(
+                    resulting_sets, pipeline)
+                summary_novelty_score, sets_novelty_scores, final_predicates = get_novelty_scores(
+                    resulting_sets, seen_predicates, pipeline)
                 operations.append({
                     "setId": int(set.set_id),
                     "operation": operation,
                     "attribute": attribute.replace("galaxies.", ""),
                     "utility_score": global_score if not np.isnan(global_score) else 0,
                     "novelty_score": summary_novelty_score if not np.isnan(summary_novelty_score) else 0
-                })  
+                })
             resulting_sets = pipeline.by_distribution(dataset=set)
-            global_score, sets_scores = get_utility_scores(resulting_sets, pipeline) 
-            summary_novelty_score, sets_novelty_scores, final_predicates = get_novelty_scores(resulting_sets, seen_predicates, pipeline)
+            global_score, sets_scores = get_utility_scores(
+                resulting_sets, pipeline)
+            summary_novelty_score, sets_novelty_scores, final_predicates = get_novelty_scores(
+                resulting_sets, seen_predicates, pipeline)
             operations.append({
-                    "setId": int(set.set_id),
-                    "operation": "distribution",
-                    "attribute": "",
-                    "utility_score": global_score if not np.isnan(global_score) else 0,
-                    "novelty_score": summary_novelty_score if not np.isnan(summary_novelty_score) else 0
-                })  
-    return sorted(operations, key=lambda k: k['utility_score'], reverse=True) 
-         
+                "setId": int(set.set_id),
+                "operation": "distribution",
+                "attribute": "",
+                "utility_score": global_score if not np.isnan(global_score) else 0,
+                "novelty_score": summary_novelty_score if not np.isnan(summary_novelty_score) else 0
+            })
+    return sorted(operations, key=lambda k: k['utility_score'], reverse=True)
+
+
 def get_galaxies_sets(sets, pipeline, get_scores, get_predicted_scores, seen_predicates=None):
     results = {
         "sets": []
@@ -121,8 +134,8 @@ def get_galaxies_sets(sets, pipeline, get_scores, get_predicted_scores, seen_pre
                 {"dimension": predicate.attribute, "value": str(predicate.value)})
 
         # set.data = set.data[["galaxies.ra", "galaxies.dec"]]
-        if len(dataset.data) > 22:
-            data = dataset.data.sample(n=22)
+        if len(dataset.data) > 12:
+            data = dataset.data.sample(n=12)
         else:
             data = dataset.data
         for index, galaxy in data[["galaxies.ra", "galaxies.dec"]].iterrows():
@@ -136,11 +149,13 @@ def get_galaxies_sets(sets, pipeline, get_scores, get_predicted_scores, seen_pre
             for dataset in results["sets"]:
                 dataset["silhouette"] = 0
         else:
-            summary_utility_score, sets_utility_scores = get_utility_scores(sets, pipeline)
+            summary_utility_score, sets_utility_scores = get_utility_scores(
+                sets, pipeline)
             results["utility"] = summary_utility_score
             for index, score in enumerate(sets_utility_scores):
                 results["sets"][index]["silhouette"] = score
-        summary_novelty_score, sets_novelty_scores, seen_predicates = get_novelty_scores(sets, seen_predicates, pipeline)
+        summary_novelty_score, sets_novelty_scores, seen_predicates = get_novelty_scores(
+            sets, seen_predicates, pipeline)
         results["novelty"] = summary_novelty_score
         for index, score in enumerate(sets_novelty_scores):
             results["sets"][index]["novelty"] = score
@@ -148,17 +163,18 @@ def get_galaxies_sets(sets, pipeline, get_scores, get_predicted_scores, seen_pre
     else:
         results["utility"] = None
         results["novelty"] = None
-        
+
         for dataset in results["sets"]:
             dataset["silhouette"] = None
             dataset["novelty"] = None
-        for dataset in sets:     
-            seen_predicates.update(set(map(lambda x: f"{x.attribute}{x.operator}{x.value}", dataset.predicate.components)))
+        for dataset in sets:
+            seen_predicates.update(set(map(
+                lambda x: f"{x.attribute}{x.operator}{x.value}", dataset.predicate.components)))
         results["seenPredicates"] = seen_predicates
     if get_predicted_scores:
-        results["predictedScores"] = get_future_scores(sets, pipeline, seen_predicates)
+        results["predictedScores"] = get_future_scores(
+            sets, pipeline, seen_predicates)
     else:
         results["predictedScores"] = {}
 
     return results
-
