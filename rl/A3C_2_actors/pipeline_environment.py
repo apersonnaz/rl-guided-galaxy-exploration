@@ -1,14 +1,20 @@
+from app.pipelines.predicateitem import PredicateItem
+from app.pipelines.dataset import Dataset
+from app.pipelines import pipeline
 import gym
 import numpy as np
 import json
 import random
 from gym import spaces
 import random
+
+from numpy.lib.function_base import piecewise
 from app.pipelines.pipeline_precalculated_sets import PipelineWithPrecalculatedSets
 from os import listdir
 from .state_encoder import StateEncoder
 from .target_set_generator import TargetSetGenerator
 from .action_manager import ActionManager
+
 
 class PipelineEnvironment(gym.Env):
     def __init__(self, pipeline: PipelineWithPrecalculatedSets, mode="simple", target_set_name=None, number_of_examples=3, agentId=-1, episode_steps=50, target_items=None):
@@ -23,15 +29,20 @@ class PipelineEnvironment(gym.Env):
         self.target_set_index = -1
         if self.target_set_name != None and target_items == None:
             with open(f"./rl/targets/{self.target_set_name}.json") as f:
-                self.state_encoder = StateEncoder(pipeline, target_items=set(json.load(f)))
+                self.state_encoder = StateEncoder(
+                    pipeline, target_items=set(json.load(f)))
         elif self.mode == "scattered" and target_items == None:
             self.state_encoder = StateEncoder(pipeline,  target_items=TargetSetGenerator.get_diverse_target_set(
-                number_of_samples=50))    
+                number_of_samples=100), target_set_size=2000)
+        elif self.mode == "concentrated":
+            self.state_encoder = StateEncoder(pipeline)
         else:
-            self.state_encoder = StateEncoder(pipeline, target_items=target_items)
+            self.state_encoder = StateEncoder(
+                pipeline, target_items=target_items)
 
         self.action_manager = ActionManager(pipeline)
-        self.set_action_space = spaces.Discrete(self.pipeline.discrete_categories_count)
+        self.set_action_space = spaces.Discrete(
+            self.pipeline.discrete_categories_count)
         self.operation_action_space = spaces.Discrete(
             len(self.action_manager.set_action_types))
 
@@ -43,7 +54,6 @@ class PipelineEnvironment(gym.Env):
                 len(self.pipeline.exploration_columns)
             self.operation_state_dim += self.number_of_examples * \
                 len(self.pipeline.exploration_columns)
-        
 
     def reset(self):
         self.step_count = 0
@@ -51,6 +61,10 @@ class PipelineEnvironment(gym.Env):
         self.input_set = None
         if self.mode == "by_example":
             self.get_target_set_and_examples()
+        if self.mode == "concentrated":
+            self.state_encoder = StateEncoder(
+                self.pipeline, target_items=TargetSetGenerator.get_concentrated_target_set(), target_set_size=500)
+            self.datasets = self.get_contentrated_start_datasets()
         self.sets_viewed = set()
         self.set_review_counter = 0
         self.state_encoder.reset()
@@ -62,7 +76,24 @@ class PipelineEnvironment(gym.Env):
             "by_neighbors": 0
         }
 
+        self.episode_info = []
         return self.set_state
+
+    def get_contentrated_start_datasets(self):
+        while True:
+            examples = random.choices(
+                list(self.state_encoder.target_items), k=2)
+            galaxies = self.pipeline.initial_collection[self.pipeline.initial_collection["galaxies.objID"].isin(
+                examples)]
+            dataset = Dataset()
+            for column in self.pipeline.exploration_columns:
+                if galaxies[column].nunique() == 1:
+                    dataset.predicate.append(PredicateItem(
+                        column, "==", galaxies.iloc[0][column], is_category=True))
+            if len(dataset.predicate.components) > 3:
+                break
+        self.pipeline.reload_set_data(dataset, apply_predicate=True)
+        return self.pipeline.by_superset(dataset)
 
     def fix_possible_operation_action_probs(self, set_index, probs):
         if len(self.datasets) == 0:
@@ -101,12 +132,14 @@ class PipelineEnvironment(gym.Env):
         if self.mode == 'by_example':
             state += self.example_state
 
-        encoded_set, reward = self.state_encoder.encode_dataset(dataset, get_reward=False)
+        encoded_set, reward = self.state_encoder.encode_dataset(
+            dataset, get_reward=False)
         state += encoded_set
         return np.array(state)
 
     def get_set_state(self):
-        encoded_sets, reward = self.state_encoder.encode_datasets(datasets=self.datasets)
+        encoded_sets, reward = self.state_encoder.encode_datasets(
+            datasets=self.datasets)
         state = []
 
         if self.mode == 'by_example':
@@ -116,9 +149,6 @@ class PipelineEnvironment(gym.Env):
 
     def render(self):
         i = 1
-
-    
-
 
     def step(self, set_index, operation_index=-1):
         self.step_count += 1
@@ -153,9 +183,9 @@ class PipelineEnvironment(gym.Env):
         if len(self.datasets) == 0:
             reward = 0
             print(
-                f"Agent: {self.agentId} Set index: {set_index} Action: {set_action_array} set id: {self.input_set.set_id} No more sets!!!!!!")
+                f"Agent: {self.agentId} Operation: {self.step_count} Set index: {set_index} Action: {set_action_array} set id: {self.input_set.set_id} No more sets!!!!!!")
             self.datasets = original_datasets
-            self.input_set = original_input_set
+            # self.input_set = original_input_set
         else:
             result_set_ids = set(map(lambda x: x.set_id, self.datasets))
             self.set_review_counter += len(result_set_ids & self.sets_viewed)
@@ -163,8 +193,18 @@ class PipelineEnvironment(gym.Env):
             self.set_state, reward = self.get_set_state()
 
             print(
-                f"Agent: {self.agentId} Set index: {set_index} Action: {set_action_array} set id: {self.input_set.set_id} Reward: {reward}")
+                f"Agent: {self.agentId} Operation: {self.step_count}  Set index: {set_index} Action: {set_action_array} set id: {self.input_set.set_id} Reward: {reward}")
 
+        self.episode_info.append({
+            "input_set_index": set_index,
+            "input_set_size": len(self.input_set.data),
+            "input_set_id": self.input_set.set_id if self.input_set.set_id != None else -1,
+            "operator": set_action_array[0],
+            "parameter": set_action_array[1] if len(set_action_array) > 1 else None,
+            "output_set_count": len(self.datasets),
+            "output_set_average_size": sum(map(lambda x: len(x.data), self.datasets))/len(self.datasets),
+            "reward": reward
+        })
         done = self.step_count == self.episode_steps
         set_op_id = f"{self.input_set.set_id}:{set_action_array}" if self.input_set != None else f"-1:{set_action_array}"
         return self.set_state, reward, done, set_op_id

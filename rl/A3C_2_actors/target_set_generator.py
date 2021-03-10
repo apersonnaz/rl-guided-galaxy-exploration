@@ -2,6 +2,7 @@ import json
 import random
 from os import listdir
 
+
 class TargetSetGenerator:
     @staticmethod
     def get_diverse_target_set(number_of_samples=10):
@@ -15,3 +16,14 @@ class TargetSetGenerator:
                 else:
                     initial_target_items += items
         return set(initial_target_items)
+
+    @staticmethod
+    def get_concentrated_target_set():
+        target_files = listdir("./rl/targets/")
+        while True:
+            target_file = random.choice(target_files)
+            with open("./rl/targets/"+target_file) as f:
+                items = json.load(f)
+            if len(items) > 50 and len(items) < 2000:
+                break
+        return set(items)

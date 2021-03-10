@@ -41,11 +41,12 @@ class Critic:
     def save_model(self, name=None, step=None):
         if name == None:
             name = self.agent_name
-        directory = "saved_models/" + name + "/critic/"
         if step == None:
-            directory += "final"
+            step = "final"
         else:
-            directory += str(step)
+            step = str(step)
+        directory = "saved_models/" + name + "/" + step + "/critic/"
+        
         if not os.path.exists(directory):
             os.makedirs(directory)
         self.model.save(directory)

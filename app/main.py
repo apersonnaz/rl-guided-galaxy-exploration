@@ -232,7 +232,7 @@ class GalaxyRequest(BaseModel):
     target_set: Optional[str]=None
     curiosity_weight: Optional[float]=None
     found_items_with_ratio: Optional[Dict[str, float]]=None
-    target_items: Optional[List[int]] = None
+    target_items: Optional[List[str]] = None
     previous_set_states: Optional[List[List[float]]] = None
     previous_operation_states: Optional[List[List[float]]] = None
     seen_predicates: Optional[List[str]] = []
@@ -246,6 +246,7 @@ async def by_facet_g( galaxy_request:GalaxyRequest):
     try:
         # print(requestBody.json())
         pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
+        galaxy_request.target_items = set(map(lambda x: int(x), galaxy_request.target_items))
         if galaxy_request.input_set_id == -1:
             dataset = pipeline.get_dataset()
         else:
@@ -284,6 +285,7 @@ async def by_superset_g(galaxy_request:GalaxyRequest):
     result = []
     try:
         pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
+        galaxy_request.target_items = set(map(lambda x: int(x), galaxy_request.target_items))
         if galaxy_request.input_set_id == -1:
             dataset = pipeline.get_dataset()
         else:
@@ -321,6 +323,7 @@ async def by_neighbors_g(galaxy_request:GalaxyRequest):
     try:
         # print(requestBody.json())
         pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
+        galaxy_request.target_items = set(map(lambda x: int(x), galaxy_request.target_items))
         dataset = pipeline.get_groups_as_datasets([galaxy_request.input_set_id])[0]
         result_sets = pipeline.by_neighbors(
             dataset=dataset, attributes=galaxy_request.dimensions)
@@ -356,6 +359,7 @@ async def by_distribution_g(galaxy_request:GalaxyRequest):
     try:
         # print(requestBody.json())
         pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
+        galaxy_request.target_items = set(map(lambda x: int(x), galaxy_request.target_items))
         dataset = pipeline.get_groups_as_datasets([galaxy_request.input_set_id])[0]
         result_sets = pipeline.by_distribution(
             dataset=dataset)
@@ -398,7 +402,7 @@ async def get_dataset_information():
          tags=["info"])
 async def get_target_items_and_prediction( target_set: str = None, curiosity_weight: float = None, dataset_ids: List[int] = []):    
     pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
-    target_items = TargetSetGenerator.get_diverse_target_set(number_of_samples=50)
+    target_items = TargetSetGenerator.get_diverse_target_set(number_of_samples=100)
     items_found_with_ratio = {}
     if len(dataset_ids) == 0:
         datasets = [pipeline.get_dataset()] 
@@ -406,7 +410,7 @@ async def get_target_items_and_prediction( target_set: str = None, curiosity_wei
         datasets = pipeline.get_groups_as_datasets(dataset_ids)
     
     prediction_results = model_manager.get_prediction(datasets, target_set, curiosity_weight, target_items, items_found_with_ratio)
-    prediction_results["targetItems"] = target_items
+    prediction_results["targetItems"] = list(map(lambda x: str(x),target_items))
     return prediction_results
 
 @app.put("/app/load-model",
