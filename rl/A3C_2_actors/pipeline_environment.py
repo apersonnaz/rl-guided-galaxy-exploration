@@ -17,7 +17,7 @@ from .action_manager import ActionManager
 
 
 class PipelineEnvironment(gym.Env):
-    def __init__(self, pipeline: PipelineWithPrecalculatedSets, mode="simple", target_set_name=None, number_of_examples=3, agentId=-1, episode_steps=50, target_items=None):
+    def __init__(self, pipeline: PipelineWithPrecalculatedSets, mode="simple", target_set_name=None, number_of_examples=3, agentId=-1, episode_steps=50, target_items=None, operators=[]):
         self.pipeline = pipeline
         self.mode = mode
         self.target_set_name = target_set_name
@@ -40,7 +40,7 @@ class PipelineEnvironment(gym.Env):
             self.state_encoder = StateEncoder(
                 pipeline, target_items=target_items)
 
-        self.action_manager = ActionManager(pipeline)
+        self.action_manager = ActionManager(pipeline, operators=operators)
         self.set_action_space = spaces.Discrete(
             self.pipeline.discrete_categories_count)
         self.operation_action_space = spaces.Discrete(
@@ -63,7 +63,7 @@ class PipelineEnvironment(gym.Env):
             self.get_target_set_and_examples()
         if self.mode == "concentrated":
             self.state_encoder = StateEncoder(
-                self.pipeline, target_items=TargetSetGenerator.get_concentrated_target_set(), target_set_size=500)
+                self.pipeline, target_items=TargetSetGenerator.get_concentrated_target_set(), target_set_size=200)
             self.datasets = self.get_contentrated_start_datasets()
         self.sets_viewed = set()
         self.set_review_counter = 0
@@ -82,18 +82,23 @@ class PipelineEnvironment(gym.Env):
     def get_contentrated_start_datasets(self):
         while True:
             examples = random.choices(
-                list(self.state_encoder.target_items), k=2)
+                list(self.state_encoder.target_items), k=3)
             galaxies = self.pipeline.initial_collection[self.pipeline.initial_collection["galaxies.objID"].isin(
                 examples)]
             dataset = Dataset()
+            common_columns = []
             for column in self.pipeline.exploration_columns:
                 if galaxies[column].nunique() == 1:
+                    common_columns.append(column)
                     dataset.predicate.append(PredicateItem(
                         column, "==", galaxies.iloc[0][column], is_category=True))
-            if len(dataset.predicate.components) > 3:
+            if len(dataset.predicate.components) > 4:
                 break
+        column_to_split_on = random.choice(common_columns)
+        dataset.predicate.remove_attribute(column_to_split_on)
         self.pipeline.reload_set_data(dataset, apply_predicate=True)
-        return self.pipeline.by_superset(dataset)
+
+        return self.pipeline.by_facet(dataset, attributes=[column_to_split_on], number_of_groups=self.pipeline.discrete_categories_count)
 
     def fix_possible_operation_action_probs(self, set_index, probs):
         if len(self.datasets) == 0:
@@ -203,7 +208,9 @@ class PipelineEnvironment(gym.Env):
             "parameter": set_action_array[1] if len(set_action_array) > 1 else None,
             "output_set_count": len(self.datasets),
             "output_set_average_size": sum(map(lambda x: len(x.data), self.datasets))/len(self.datasets),
-            "reward": reward
+            "reward": reward,
+            "sets_viewed": len(self.sets_viewed),
+            "sets_reviewed": self.set_review_counter
         })
         done = self.step_count == self.episode_steps
         set_op_id = f"{self.input_set.set_id}:{set_action_array}" if self.input_set != None else f"-1:{set_action_array}"

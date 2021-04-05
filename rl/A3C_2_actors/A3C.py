@@ -3,6 +3,7 @@ import os
 import json
 import random
 import traceback
+import shutil
 from copy import Error
 from datetime import datetime
 from threading import Lock, Thread
@@ -37,7 +38,8 @@ parser.add_argument('--name', type=str,
                     default="")
 parser.add_argument('--resume', action='store_true')
 parser.add_argument('--resume_step', type=int, default=None)
-
+parser.add_argument('--operators', nargs='+', type=str,
+                    default=["by_facet", "by_superset", "by_neighbors", "by_distribution"])
 args = parser.parse_args()
 
 if args.resume_step != None:
@@ -75,7 +77,8 @@ wandb.init(name=args.name, project="deep-rl-tf2", id=args.id, resume=args.resume
     "notes": args.notes,
     "mode": args.mode,
     "curiosity_ratio": args.curiosity_ratio,
-    "counter_curiosity_ratio": args.counter_curiosity_ratio
+    "counter_curiosity_ratio": args.counter_curiosity_ratio,
+    "operators": args.operators
 })
 if args.resume_step != None:
     CUR_EPISODE = args.resume_step + 1
@@ -90,10 +93,10 @@ class Agent:
         if args.mode == "scattered":
             self.episode_steps = 250
         elif args.mode == "concentrated":
-            self.episode_steps = 50
+            self.episode_steps = 25
         self.agent_name = args.name
         self.env = PipelineEnvironment(
-            self.pipeline,  target_set_name=args.target_set, mode=args.mode, episode_steps=self.episode_steps)
+            self.pipeline,  target_set_name=args.target_set, mode=args.mode, episode_steps=self.episode_steps, operators=args.operators)
         self.env_name = env_name
 
         self.set_state_dim = self.env.set_state_dim
@@ -112,6 +115,11 @@ class Agent:
                 self.operation_state_dim, self.operation_action_dim, self.steps, args.actor_lr, self.agent_name, model_path=model_path+"operation_actor")
             self.global_critic = Critic(
                 self.set_state_dim, self.steps, args.critic_lr, self.agent_name, model_path=model_path+"critic")
+            if os.path.exists(f"{model_path}/set_op_counters.json"):
+                with open(f"{model_path}/set_op_counters.json") as f:
+                    self.set_op_counters = json.load(f)
+            else:
+                self.set_op_counters = {}
         else:
             self.global_set_actor = SetActor(
                 self.set_state_dim, self.set_action_dim, self.steps, args.actor_lr, self.agent_name)
@@ -119,17 +127,17 @@ class Agent:
                 self.operation_state_dim, self.operation_action_dim, self.steps, args.actor_lr, self.agent_name)
             self.global_critic = Critic(
                 self.set_state_dim, self.steps, args.critic_lr, self.agent_name)
+            self.set_op_counters = {}
         self.curiosity_module = IntrinsicCuriosityForwardModel(
             self.operation_state_dim+1, self.set_state_dim, 16, args.icm_lr, self.agent_name)
         self.num_workers = args.workers  # cpu_count()
-        self.set_op_counters = {}
 
     def train(self, max_episodes=10000):
         workers = []
 
         for i in range(self.num_workers):
             env = PipelineEnvironment(
-                self.pipeline, target_set_name=args.target_set, mode=args.mode, agentId=i, episode_steps=self.episode_steps, target_items=self.env.state_encoder.target_items)
+                self.pipeline, target_set_name=args.target_set, mode=args.mode, agentId=i, episode_steps=self.episode_steps, target_items=self.env.state_encoder.target_items, operators=args.operators)
 
             workers.append(WorkerAgent(
                 env, self.global_set_actor, self.global_operation_actor, self.global_critic, max_episodes, self.curiosity_module, self.set_op_counters, agentId=i, episode_steps=self.episode_steps))
@@ -292,7 +300,7 @@ class WorkerAgent(Thread):
                         icm_ground_truth_batch.append(np.reshape(
                             next_set_state, [1, self.set_state_dim]))
                         episode_loss += loss
-                    elif args.counter_curiosity_ratio > 0:
+                    else:
                         episode_extrinsic_reward += reward
                         intrinsic_reward = self.counter_curiosity_factor/op_counter
                         episode_intrinsic_reward += float(intrinsic_reward)
@@ -301,8 +309,8 @@ class WorkerAgent(Thread):
                         reward = args.counter_curiosity_ratio * \
                             float(intrinsic_reward) + \
                             (1-args.counter_curiosity_ratio) * reward
-                    else:
-                        episode_extrinsic_reward += reward
+                    # else:
+                    #     episode_extrinsic_reward += reward
                     reward = np.reshape(reward, [1, 1])
                     reward_batch.append(reward)
 
@@ -343,11 +351,13 @@ class WorkerAgent(Thread):
 
                                 self.set_actor.model.set_weights(
                                     self.global_set_actor.model.get_weights())
+                                # self.set_actor.global_opt_weight = self.global_set_actor.opt.weights
                                 self.operation_actor.model.set_weights(
                                     self.global_operation_actor.model.get_weights())
+                                # self.operation_actor.global_opt_weight = self.global_operation_actor.opt.get_weights()
                                 self.critic.model.set_weights(
                                     self.global_critic.model.get_weights())
-
+                                # self.critic.global_opt_weight = self.global_critic.opt.get_weights()
                                 if args.curiosity_ratio > 0:
                                     icm_states = self.list_to_batch(
                                         icm_states_batch)
@@ -364,12 +374,21 @@ class WorkerAgent(Thread):
                                     else:
                                         self.global_set_op_counters[set_op_pair] = episode_set_op_counters[set_op_pair]
 
-                                if done and CUR_EPISODE % 25 == 0:
+                                save_interval = 250
+                                if done and CUR_EPISODE != 0 and CUR_EPISODE % save_interval == 0:
                                     ep = CUR_EPISODE
+
                                     self.operation_actor.save_model(
                                         step=ep)
                                     self.set_actor.save_model(step=ep)
                                     self.critic.save_model(step=ep)
+                                    with open(f"saved_models/{args.name}/{ep}/set_op_counters.json", 'w') as f:
+                                        json.dump(
+                                            self.global_set_op_counters, f, indent=1)
+                                    # if ep - (3*save_interval) > 0 and os.path.exists(f"saved_models/{args.name}/{ep-(3*save_interval)}"):
+                                    #     shutil.rmtree(
+                                    #         f"saved_models/{args.name}/{ep-(3*save_interval)}")
+
                             except Error as error:
                                 print(error)
                                 traceback.print_tb(error.__traceback__)

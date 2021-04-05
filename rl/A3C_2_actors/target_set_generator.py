@@ -25,5 +25,6 @@ class TargetSetGenerator:
             with open("./rl/targets/"+target_file) as f:
                 items = json.load(f)
             if len(items) > 50 and len(items) < 2000:
+                print(target_file)
                 break
         return set(items)

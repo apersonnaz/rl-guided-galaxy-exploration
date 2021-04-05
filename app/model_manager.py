@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import json
 from app.pipelines.pipeline_precalculated_sets import PipelineWithPrecalculatedSets
 from rl.A3C_2_actors.state_encoder import StateEncoder
 from rl.A3C_2_actors.action_manager import ActionManager
@@ -8,19 +9,24 @@ from rl.A3C_2_actors.action_manager import ActionManager
 class ModelManager:
     def __init__(self, pipeline: PipelineWithPrecalculatedSets):
         self.pipeline = pipeline
-        self.action_manager = ActionManager(self.pipeline)
+        self.action_manager = ActionManager(self.pipeline, operators=[
+                                            "by_facet", "by_superset", "by_neighbors", "by_distribution"])
         self.target_sets = ["Scattered"]
         self.curiosity_weights = [0.0, 0.25, 0.5, 0.75, 1.0]
         self.models = {}
-        self.lstm_steps = 3
+        self.lstm_steps = 5
+        self.counter_curiosity_factor = 100/250
 
         for target_set in self.target_sets:
             self.models[target_set] = {}
             for curiosity_weight in self.curiosity_weights:
-                self.models[target_set][curiosity_weight] = {
-                    "set": tf.keras.models.load_model(f'./app/app_models/{target_set}/{curiosity_weight}/set_actor'),
-                    "operation": tf.keras.models.load_model(f'./app/app_models/{target_set}/{curiosity_weight}/operation_actor')
-                }
+                with open(f"./app/app_models/{target_set}/{curiosity_weight}/set_op_counters.json") as f:
+                    set_op_counters = json.load(f)
+                    self.models[target_set][curiosity_weight] = {
+                        "set": tf.keras.models.load_model(f'./app/app_models/{target_set}/{curiosity_weight}/set_actor'),
+                        "operation": tf.keras.models.load_model(f'./app/app_models/{target_set}/{curiosity_weight}/operation_actor'),
+                        "set_op_counters": set_op_counters
+                    }
 
     def get_prediction(self, datasets, target_set, curiosity_weight, target_items, found_items_with_ratio, previous_set_states=None, previous_operation_states=None):
         state_encoder = StateEncoder(
@@ -90,3 +96,19 @@ class ModelManager:
             "operationStates": new_operation_states,
             "reward": reward
         }
+
+    def get_curiosity_reward(self, target_set, curiosity_weight, dataset, attribute, operator):
+        if dataset.set_id == None or dataset.set_id == -1:
+            set_op_pair = f"-1:{str([operator, attribute])}"
+        elif attribute == None:
+            set_op_pair = f"{dataset.set_id}:{str([operator])}"
+        else:
+            set_op_pair = f"{dataset.set_id}:{str([operator, attribute])}"
+        set_op_counters = self.models[target_set][curiosity_weight]["set_op_counters"]
+        if set_op_pair in set_op_counters:
+            set_op_counters[set_op_pair] += 1
+        else:
+            set_op_counters[set_op_pair] = 1
+
+        op_counter = set_op_counters[set_op_pair]
+        return self.counter_curiosity_factor/op_counter
